@@ -31,7 +31,8 @@ def login_to_linkedin(wait_to_verify=False):
 def collect_results():
 	html = browser.page_source
 	soup = BeautifulSoup(html, 'html.parser')
-	results = soup.find_all("li", attrs= {"class":"reusable-search__result-container"})
+	results = soup.find_all("div", attrs= {"class":"mb1"})
+	assert len(results) > 0, "No results detected! (expected at least 1 saved job)"
 	print("  Found " + str(len(results)) + " results")
 	return results
 
@@ -44,18 +45,16 @@ def parse_results(get_ext_link=True):
 	inside_res = []
 	for res in saved:
 		# job title
-		job = res.find("span", attrs = {"class":"entity-result__title-text"})
-		title = job.get_text().strip()
+		job = res.find("span", attrs = {"class":"t-16"})
+		title = job.get_text().replace(', Verified', '').strip()
 		link = job.find("a").get('href')
 		li_link = re.split(r'[\\?]', link)[0]
 		ext_link = None
 		if get_ext_link:
 			ext_link = get_apply_link(li_link)
-		# company
-		employer = res.find("div", attrs = {"class":"entity-result__primary-subtitle"}).get_text().strip()
-		# location
-		location = res.find("div", attrs = {"class":"entity-result__secondary-subtitle"}).get_text().strip()
-        
+		# company, location
+		employer, location = [r.get_text().strip() for r in res.find_all("div", attrs = {"class":"t-14"})]
+
 		if get_ext_link:
 			inside_res.append([title, li_link, ext_link, employer, location])
 		else:
