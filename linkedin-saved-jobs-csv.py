@@ -160,4 +160,4 @@ df.to_csv(csv_filename, index=False)
 
 # Close browser and print final message
 browser.close()
-print("Done")
+print("\nDone!")

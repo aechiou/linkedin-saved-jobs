@@ -207,8 +207,8 @@ while next_page_exists:
 assert len(saved) > 0, "No results saved, expected more than one saved job!"
 print("\nTotal collected jobs: " + str(len(saved)))
 
-# We don't get the external links for the Notion integration!
-# Only will fetch them if the entry doesn't exist in the database yet
+# We don't get the external links for the Notion integration until later!
+# Only will fetch them if the entry doesn't exist in the database yet (see L232)
 parsed_results = parse_results(get_ext_link=False)
 
 assert len(parsed_results) == len(saved), "Number of parsed results not equal to number saved!"
@@ -220,8 +220,10 @@ notion = Client(auth=os.environ["NOTION_TOKEN"])
 # Iterate through results, keeping track of how many consecutive existing entries there are 
 # This way we can stop if we're just getting enough results that already exist
 exist_count = 0
+print("\nChecking for entries in Notion database\n")
 for job in parsed_results:
-    title, url, url2, employer, location = job
+    title, url, employer, location = job
+    url2 = None # Hardcoded since we would not have retrieved this yet (see L212)
     print(title + " at " + employer)
     if exist_count >= exist_thresh:
         print("  Stopping because " + str(exist_thresh) + " consecutive entries already exist")
@@ -235,4 +237,4 @@ for job in parsed_results:
 
 # Close browser and print final message
 browser.close()
-print("Done")
+print("\nDone!")
