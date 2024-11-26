@@ -10,7 +10,9 @@ from bs4 import BeautifulSoup
 import os
 import time
 import re
-from notion_client import Client
+
+import pandas as pd # for CSV export
+from notion_client import Client # for Notion integration
 
 # %%
 # ---- Functions ----
@@ -46,7 +48,7 @@ def get_saved_jobs_url(job_type='saved'):
 # Returns: two lists of the same length
 # - results: list of saved job content
 # - apply_cont: list of dropdown elements (contains external application link)
-def collect_results(get_ext_link=True, wait_time=0.6):
+def collect_results(get_ext_link=True, wait_time=0.65):
 	html = browser.page_source
 	soup = BeautifulSoup(html, 'html.parser')
 	results = soup.find_all("div", attrs= {"class":"mb1"})
@@ -98,7 +100,7 @@ def next_page():
 		try:
 			test.click()
 			return True
-		except Exception as e:
+		except Exception:
 			return False
 	else:
 		print('No more pages')
@@ -110,14 +112,14 @@ def next_page():
 # - wait_time (float): how long to wait, in seconds, for dropdown menu to appear when getting external apply link (anecdotally should be >= 0.6)
 # Returns: the content of a the dropdown
 def get_apply_content_from_dropdown(dd, wait_time=0.6):
-    # click it to reveal the dropdown
+    # Click it to reveal the dropdown
     dd.click()
     time.sleep(wait_time) 
-    # use bs4 to find the apply link/text
+    # Find the apply link/text within the dropdown
     dd_soup = BeautifulSoup(browser.page_source, "html.parser")
     dd_result = dd_soup.find("div", attrs={"class": "artdeco-dropdown__content-inner"})
-    assert dd_result is not None, "expected to find a dropdown!"
-	# need to "unclick"? TODO verify this
+    assert dd_result is not None, "Expected to find a dropdown, but content not found!"
+	# Click again to hide dropdown in browser
     dd.click()
     return dd_result
 
@@ -187,18 +189,25 @@ def entry_exists(title, company):
 
 # %%
 # ---- Params ----
-
-
 # What type of saved job?
-# One of: 'saved', 'progress', 'applied', 'archived'
+# One of: 'saved', 'progress', 'applied', 'archived' (case insensitive)
 saved_job_type = 'saved'
 
 # Whether to retrieve external application links
 retrieve_ext_links = True
 
+# Export type
+# One of: 'csv', 'notion' (case insensitive)
+export_to = 'csv'
+
+# [Notion export]
 # How many consecutive entries should already exist in the Notion database before we stop checking?
 # Set to a very high number if you want to add all new and don't mind waiting
-exist_thresh = 10
+notion_exist_thresh = 10
+
+# [CSV export]
+# File name/path for CSV file
+csv_filename = 'saved_jobs.csv'
 
 # %%
 # ---- Run script ----
@@ -250,25 +259,40 @@ parsed_results = parse_results()
 assert len(parsed_results) == len(saved), "Number of parsed results not equal to number saved!"
 print("\nParsed results: " + str(len(parsed_results)))
 
-# Copy new results into Notion database
-notion = Client(auth=os.environ["NOTION_TOKEN"])
+# Export
+assert export_to.lower() in ['csv', 'notion'], "export type not recognized!"
 
-# Iterate through results, keeping track of how many consecutive existing entries there are 
-# This way we can stop if we're just getting enough results that already exist
-exist_count = 0
-print("\nChecking for entries in Notion database\n")
-for job in parsed_results:
-    title, url, url2, employer, location = job
-    print(title + " at " + employer)
-    if exist_count >= exist_thresh:
-        print("  Stopping because " + str(exist_thresh) + " consecutive entries already exist")
-        break
-    if not entry_exists(title, employer):
-        exist_count = 0
-        create_entry(title, url, url2, employer, location)
-    else:
-        exist_count += 1
-        print("  Already exists")
+if export_to.lower() == 'csv':
+    # Create date frame from results
+    colnames = ['title', 'url', 'url2', 'employer', 'location']
+    df = pd.DataFrame(parsed_results, columns = colnames)
+    assert len(df) > 0, "Issue converting parsed results to df!"
+    # Drop columns where all values are None (url2, if no external links)
+    df.dropna(how='all', axis=1, inplace=True)
+    # Save results to CSV file
+    df.to_csv(csv_filename, index=False)
+elif export_to.lower() == 'notion':
+    # Copy new results into Notion database
+    notion = Client(auth=os.environ["NOTION_TOKEN"])
+    # Iterate through results, keeping track of how many consecutive existing entries there are 
+    # This way we can stop if we're just getting enough results that already exist
+    exist_count = 0
+    print("\nChecking for entries in Notion database\n")
+    for job in parsed_results:
+        title, url, url2, employer, location = job
+        print(title + " at " + employer)
+		
+        if entry_exists(title, employer):
+            exist_count += 1
+            print("  Already exists")
+        else:
+            exist_count = 0
+            create_entry(title, url, url2, employer, location)
+		
+        # Stop iterating once we hit threshold
+        if exist_count >= notion_exist_thresh:
+            print("  Stopping because " + str(notion_exist_thresh) + " consecutive entries already exist")
+            break
 
 # Print final message
 print("\nDone!")

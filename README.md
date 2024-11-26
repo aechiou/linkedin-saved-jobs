@@ -1,14 +1,16 @@
 # Scrape LinkedIn saved jobs
 
-Python scripts to export information about saved jobs on LinkedIn to either: 
+Python script to export information about saved jobs on LinkedIn to either: 
 1. CSV file, or
 2. Notion database
+
+The export type is controlled by the `export_to` parameter (parameters are defined in L191-210).
 
 In either case, your LinkedIn credentials should be stored as environmental variables:
 -  `LI_USER`: Your LinkedIn username
 -  `LI_PASS`: Your LinkedIn password
 
-## 1. CSV version
+## 1. CSV export
 
 This version creates a CSV file containing a row for each saved job, and the following columns:
 - `title`: Job title
@@ -17,7 +19,7 @@ This version creates a CSV file containing a row for each saved job, and the fol
 - `employer`: Employer
 - `location`: Location
 
-## 2. Notion integration version
+## 2. Notion integration
 
 This version updates an existing Notion database to add newly saved jobs, containing the following properties:
 - `Name`: Job title
