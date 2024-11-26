@@ -1,0 +1,4 @@
+selenium==4.24.0
+beautifulsoup4==4.11.1
+pandas==2.2.2
+notion-client==2.2.1
