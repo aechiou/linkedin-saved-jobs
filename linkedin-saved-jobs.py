@@ -73,7 +73,7 @@ def parse_results():
 
 	for res, apply_cont in zip(saved, saved_ext):
 		# job title
-		job = res.find("span", attrs = {"class":"t-16"})
+		job = res.find("div", attrs = {"class":"t-roman"})
 		title = job.get_text().replace(', Verified', '').strip()
 		link = job.find("a").get('href')
 		li_link = re.split(r'[\\?]', link)[0]
@@ -88,7 +88,7 @@ def parse_results():
 				
 			if dd_apply.get_text().strip() == "Apply":
 				ext_link = dd_apply.get("href")
-			inside_res.append([title, li_link, ext_link, employer, location])
+		inside_res.append([title, li_link, ext_link, employer, location])
 	return inside_res
 
 # Determines whether there is a next page
@@ -198,7 +198,7 @@ retrieve_ext_links = True
 
 # Export type
 # One of: 'csv', 'notion' (case insensitive)
-export_to = 'csv'
+export_to = 'notion'
 
 # [Notion export]
 # How many consecutive entries should already exist in the Notion database before we stop checking?
@@ -256,8 +256,8 @@ print("\nTotal collected jobs: " + str(len(saved)))
 
 # Parse results
 parsed_results = parse_results()
-assert len(parsed_results) == len(saved), "Number of parsed results not equal to number saved!"
 print("\nParsed results: " + str(len(parsed_results)))
+assert len(parsed_results) == len(saved), "Number of parsed results not equal to number saved!"
 
 # Export
 assert export_to.lower() in ['csv', 'notion'], "export type not recognized!"
