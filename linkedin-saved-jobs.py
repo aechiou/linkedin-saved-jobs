@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 import os
 import time
 import re
+import math
 
 import pandas as pd # for CSV export
 from notion_client import Client # for Notion integration
@@ -193,6 +194,10 @@ def entry_exists(title, company):
 # One of: 'saved', 'progress', 'applied', 'archived' (case insensitive)
 saved_job_type = 'saved'
 
+# How many pages (max) to check?
+# Keep as -1 if all
+num_pages = -1
+
 # Whether to retrieve external application links
 retrieve_ext_links = True
 
@@ -225,6 +230,7 @@ login_to_linkedin()
 saved = []
 saved_ext = []
 next_page_exists = True
+num_pages = num_pages if num_pages > 0 else math.inf
 i = 1
 
 # Override get_ext_link if job type is not saved
@@ -235,7 +241,7 @@ if saved_job_type.lower() != "saved":
 
 # This could take a bit longer to run if you're getting the external links
 # How much longer? approximately: number of saved jobs * wait_time (below)
-while next_page_exists:
+while next_page_exists and i <= num_pages:
     print("Page " + str(i))
     time.sleep(2) # Turns out this is critical! Otherwise the page doesn't load properly and results won't populate
     results, apply_cont = collect_results(get_ext_link=retrieve_ext_links, wait_time=0.65)
