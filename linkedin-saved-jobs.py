@@ -198,8 +198,9 @@ saved_job_type = 'saved'
 # Keep as -1 if all
 num_pages = -1
 
-# Whether to retrieve external application links
+# Whether to retrieve external application links, and how long to wait to retrieve them
 retrieve_ext_links = True
+ext_link_wait_time = 0.65 # seconds
 
 # Export type
 # One of: 'csv', 'notion' (case insensitive)
@@ -244,7 +245,7 @@ if saved_job_type.lower() != "saved":
 while next_page_exists and i <= num_pages:
     print("Page " + str(i))
     time.sleep(2) # Turns out this is critical! Otherwise the page doesn't load properly and results won't populate
-    results, apply_cont = collect_results(get_ext_link=retrieve_ext_links, wait_time=0.65)
+    results, apply_cont = collect_results(get_ext_link=retrieve_ext_links, wait_time=ext_link_wait_time)
     assert len(results) > 0, "No saved jobs detected! (expected at least 1)"
     saved.extend(results)
     saved_ext.extend(apply_cont)
