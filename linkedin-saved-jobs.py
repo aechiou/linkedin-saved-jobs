@@ -22,6 +22,7 @@ from notion_client import Client # for Notion integration
 # Args:
 # - wait_to_verify (bool): Flag to add wait time at end of function (allows time for 2 step verification)
 def login_to_linkedin(wait_to_verify=False):
+	browser.get('https://www.linkedin.com/login')
 	wait = WebDriverWait(browser, 30)
 	wait.until(EC.element_to_be_clickable((By.ID, "username"))).send_keys(os.environ['LI_USER'])
 	wait.until(EC.element_to_be_clickable((By.ID, "password"))).send_keys(os.environ['LI_PASS'])
@@ -221,8 +222,8 @@ csv_filename = 'saved_jobs.csv'
 # Open a Chrome browser to LinkedIn saved jobs, then log in
 # Requires LI_USER and LI_PASS environment variables
 browser = webdriver.Chrome()
-browser.get(get_saved_jobs_url(saved_job_type))
 login_to_linkedin()
+browser.get(get_saved_jobs_url(saved_job_type))
 
 # Iterate through each page and collect results 
 # This is the only time we should be clicking through the browser
